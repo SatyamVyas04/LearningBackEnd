@@ -2,13 +2,15 @@
 
 ## Overview
 
-This project focuses on understanding and implementing various data models. It contains some practiced models inside the `Models` folder. The setup is kept basic to emphasize the model structures and their relationships. The models include components for a Todo List application, namely the `User`, `Todo`, and `Sub_Todo`. Future additions will include models for an eCommerce website and hospital management system.
+This project focuses on understanding and implementing various data models. It contains practiced models inside the `Models` folder. The setup is kept basic to emphasize the model structures and their relationships. The models include components for a Todo List application, hospital management, and an ECommerce website. All models are exported using `mongoose`.
 
 ## Table of Contents
 
 -   [Technologies Used](#technologies-used)
 -   [Models Implemented](#models-implemented)
--   [Future Work](#future-work)
+    -   [Todo List Components](#todo-list-components)
+    -   [ECommerce Website Components](#ecommerce-website-components)
+    -   [Hospital Management Components](#hospital-management-components)
 
 ## Technologies Used
 
@@ -24,7 +26,15 @@ This project focuses on understanding and implementing various data models. It c
 -   **Todo**: Represents a to-do item created by a user.
 -   **Sub_Todo**: Represents a sub-task under a to-do item.
 
-## Future Work
+### ECommerce Website Components
 
--   **eCommerce Website Models**: Implementation of models for users, products, orders, and payments.
--   **Hospital Management Models**: Implementation of models for patients, doctors, appointments, and medical records.
+-   **User**: Represents a user in the system.
+-   **Category**: Represents a product category.
+-   **Product**: Represents a product available for purchase.
+-   **Order**: Represents an order placed by a user.
+
+### Hospital Management Components
+
+-   **Patient**: Represents a patient in the hospital.
+-   **Doctor**: Represents a doctor in the hospital.
+-   **Hospital**: Represents the hospital.
