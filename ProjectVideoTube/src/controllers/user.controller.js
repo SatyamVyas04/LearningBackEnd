@@ -263,7 +263,9 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 const getCurrentUser = asyncHandler(async (req, res) => {
     return res
         .status(200)
-        .json(200, req.user, "Current User fetched successfully");
+        .json(
+            new ApiResponse(200, req.user, "Current User fetched successfully")
+        );
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
@@ -372,7 +374,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
                 isSubscribed: {
                     $cond: {
                         if: {
-                            $in: [req.user?._id, "$subsribers.subsriber"],
+                            $in: [req.user?._id, "$subscribers.subsriber"],
                         },
                         then: true,
                         else: false,
@@ -410,56 +412,69 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 });
 
 const getWatchHistory = asyncHandler(async (req, res) => {
-    const user = await User.aggregate([
-        {
-            $match: {
-                _id: new mongoose.Types.ObjectId(req.user._id),
+    try {
+        const [user] = await User.aggregate([
+            {
+                $match: {
+                    _id: new mongoose.Types.ObjectId(req.user._id),
+                },
             },
-        },
-        {
-            $lookup: {
-                from: "videos",
-                localField: "watchHistory",
-                foreignField: "_id",
-                as: "watchHistory",
-                pipeline: [
-                    {
-                        $lookup: {
-                            from: "users",
-                            localField: "owner",
-                            foreignField: "_id",
-                            as: "owner",
-                            pipeline: [
-                                {
-                                    $project: {
-                                        fullname: 1,
-                                        username: 1,
-                                        avatar: 1,
+            {
+                $lookup: {
+                    from: "videos",
+                    localField: "watchHistory",
+                    foreignField: "_id",
+                    as: "watchHistory",
+                    pipeline: [
+                        {
+                            $lookup: {
+                                from: "users",
+                                localField: "owner",
+                                foreignField: "_id",
+                                as: "owner",
+                                pipeline: [
+                                    {
+                                        $project: {
+                                            fullname: 1,
+                                            username: 1,
+                                            avatar: 1,
+                                        },
                                     },
-                                },
-                            ],
-                        },
-                    },
-                    {
-                        $addFields: {
-                            owner: {
-                                $first: "$owner",
+                                ],
                             },
                         },
-                    },
-                ],
+                        {
+                            $addFields: {
+                                owner: {
+                                    $first: "$owner",
+                                },
+                            },
+                        },
+                    ],
+                },
             },
-        },
-    ]);
+        ]);
 
-    return res.status(
-        200,
-        new ApiResponse(
-            200,
-            user[0].watchHistory,
-            "Watch History fetched successfully"
-        )
-    );
+        if (!user) {
+            return res
+                .status(404)
+                .json(new ApiResponse(404, [], "User not found"));
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    user.watchHistory,
+                    "Watch History fetched successfully"
+                )
+            );
+    } catch (error) {
+        return res
+            .status(500)
+            .json(new ApiResponse(500, [], "Internal Server Error"));
+    }
 });
 
 export {
