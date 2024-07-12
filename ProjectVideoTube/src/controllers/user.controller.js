@@ -2,7 +2,10 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+    deleteFromCloudinary,
+    uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
@@ -290,6 +293,10 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
+    let curr_file_location = req.user?.avatar;
+    const response = await deleteFromCloudinary(curr_file_location);
+    console.log(response);
+
     const avatarLocalPath = req.file?.path;
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is missing");
@@ -313,6 +320,10 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 });
 
 const updateUserCoverImage = asyncHandler(async (req, res) => {
+    let curr_file_location = req.user?.coverImage;
+    const response = await deleteFromCloudinary(curr_file_location);
+    console.log(response);
+
     const coverImageLocalPath = req.file?.path;
     if (!coverImageLocalPath) {
         throw new ApiError(400, "coverImage file is missing");
