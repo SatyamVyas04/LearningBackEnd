@@ -93,7 +93,24 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     if (!isValidObjectId(subscriberId))
         throw new ApiError(404, "Subscriber not found");
 
-    const aggregationPipeline = [{ $match: { subscriber: subscriberId } }];
+    const aggregationPipeline = [
+        { $match: { subscriber: new mongoose.Types.ObjectId(subscriberId) } },
+        {
+            $lookup: {
+                from: "users",
+                localField: "channel",
+                foreignField: "_id",
+                as: "channelDetails",
+            },
+        },
+        { $unwind: "$channelDetails" },
+        {
+            $project: {
+                "channelDetails.username": 1,
+                "channelDetails.avatar": 1,
+            },
+        },
+    ];
     const subbedChannels = await Subscription.aggregate(aggregationPipeline);
     if (!subbedChannels) {
         throw new ApiError(500, "Internal Server Error fetching subscribers");

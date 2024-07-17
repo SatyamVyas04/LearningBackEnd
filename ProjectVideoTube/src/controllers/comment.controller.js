@@ -6,7 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const getVideoComments = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
-    if (!isValidObjectId(videoId)) throw new ApiError(404, "Video not found!");
+    if (!isValidObjectId(videoId)) throw new ApiError(404, "Video not found");
 
     const { page = 1, limit = 10 } = req.query;
 
@@ -147,11 +147,22 @@ const updateComment = asyncHandler(async (req, res) => {
 
 const deleteComment = asyncHandler(async (req, res) => {
     const { commentId } = req.params;
-    const comment = await Comment.findByIdAndDelete({ _id: commentId });
+
+    const comment = await Comment.findById(commentId);
     if (!comment) throw new ApiError(404, "Comment not found");
+
+    if (comment.owner.toString() !== req.user._id.toString()) {
+        throw new ApiError(
+            403,
+            "You are not authorized to delete this comment"
+        );
+    }
+
+    await Comment.findByIdAndDelete(commentId);
+
     return res
         .status(200)
-        .json(new ApiResponse(200, comment, "Comment deleted successfully"));
+        .json(new ApiResponse(200, {}, "Comment deleted successfully"));
 });
 
 export { getVideoComments, addComment, updateComment, deleteComment };

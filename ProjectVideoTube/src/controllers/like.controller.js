@@ -1,135 +1,137 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { Like } from "../models/like.model.js";
+import { Video } from "../models/video.model.js";
+import { Comment } from "../models/comment.model.js";
+import { Tweet } from "../models/tweet.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
-const toggleVideoLike = asyncHandler(async (req, res, next) => {
+const toggleVideoLike = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
-    if (!videoId) throw new ApiError(404, "Video not found");
+    if (!isValidObjectId(videoId)) throw new ApiError(400, "Invalid video ID");
 
-    try {
-        const preLiked = await Like.findOneAndDelete({
-            video: videoId,
-            likedBy: req.user._id,
-        });
+    const video = await Video.findById(videoId);
+    if (!video) throw new ApiError(404, "Video not found");
 
-        if (preLiked) {
-            return res
-                .status(200)
-                .json(new ApiResponse(200, null, "Unliked successfully"));
-        }
+    const existingLike = await Like.findOneAndDelete({
+        video: videoId,
+        likedBy: req.user._id,
+    });
 
-        const like = await Like.create({
-            video: videoId,
-            likedBy: req.user._id,
-        });
-
-        if (!like)
-            throw new ApiError(500, "Internal Server Error while liking");
-
+    if (existingLike) {
         return res
             .status(200)
-            .json(new ApiResponse(200, like, "Like posted successfully"));
-    } catch (error) {
-        throw new ApiError(500, `Internal Server Error: ${error.message}`);
+            .json(new ApiResponse(200, null, "Video unliked successfully"));
     }
+
+    const newLike = await Like.create({
+        video: videoId,
+        likedBy: req.user._id,
+    });
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, newLike, "Video liked successfully"));
 });
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
     const { commentId } = req.params;
-    if (!commentId) throw new ApiError(404, "Comment not found");
+    if (!isValidObjectId(commentId))
+        throw new ApiError(400, "Invalid Comment ID");
 
-    try {
-        const preLiked = await Like.findOneAndDelete({
-            comment: commentId,
-            likedBy: req.user._id,
-        });
+    const comment = await Comment.findById(commentId);
+    if (!comment) throw new ApiError(404, "Comment not found");
 
-        if (preLiked) {
-            return res
-                .status(200)
-                .json(new ApiResponse(200, null, "Unliked successfully"));
-        }
+    const existingLike = await Like.findOneAndDelete({
+        comment: commentId,
+        likedBy: req.user._id,
+    });
 
-        const like = await Like.create({
-            comment: commentId,
-            likedBy: req.user._id,
-        });
-
-        if (!like)
-            throw new ApiError(500, "Internal Server Error while liking");
-
+    if (existingLike) {
         return res
             .status(200)
-            .json(new ApiResponse(200, like, "Like posted successfully"));
-    } catch (error) {
-        throw new ApiError(500, `Internal Server Error: ${error.message}`);
+            .json(new ApiResponse(200, null, "Comment unliked successfully"));
     }
+
+    const newLike = await Like.create({
+        comment: commentId,
+        likedBy: req.user._id,
+    });
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, newLike, "Comment liked successfully"));
 });
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
     const { tweetId } = req.params;
-    if (!tweetId) throw new ApiError(404, "Tweet not found");
+    if (!isValidObjectId(tweetId)) throw new ApiError(400, "Invalid Tweet ID");
 
-    try {
-        const preLiked = await Like.findOneAndDelete({
-            tweet: tweetId,
-            likedBy: req.user._id,
-        });
+    const tweet = await Tweet.findById(tweetId);
+    if (!tweet) throw new ApiError(404, "Tweet not found");
 
-        if (preLiked) {
-            return res
-                .status(200)
-                .json(new ApiResponse(200, null, "Unliked successfully"));
-        }
+    const existingLike = await Like.findOneAndDelete({
+        tweet: tweetId,
+        likedBy: req.user._id,
+    });
 
-        const like = await Like.create({
-            tweet: tweetId,
-            likedBy: req.user._id,
-        });
-
-        if (!like)
-            throw new ApiError(500, "Internal Server Error while liking");
-
+    if (existingLike) {
         return res
             .status(200)
-            .json(new ApiResponse(200, like, "Like posted successfully"));
-    } catch (error) {
-        throw new ApiError(500, `Internal Server Error: ${error.message}`);
+            .json(new ApiResponse(200, null, "Tweet unliked successfully"));
     }
+
+    const newLike = await Like.create({
+        tweet: tweetId,
+        likedBy: req.user._id,
+    });
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, newLike, "Tweet liked successfully"));
 });
 
 const getLikedVideos = asyncHandler(async (req, res) => {
-    try {
-        const aggregatePipeline = [
-            {
-                $match: { likedBy: req.user._id },
-            },
-            {
-                $lookup: {
-                    from: "videos",
-                    localField: "video",
-                    foreignField: "_id",
-                    as: "videos",
-                },
-            },
-        ];
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
 
-        const likedVideos = Like.aggregate(aggregatePipeline);
+    const aggregatePipeline = [
+        {
+            $match: { likedBy: new mongoose.Types.ObjectId(req.user._id) },
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "video",
+                foreignField: "_id",
+                as: "video",
+            },
+        },
+        { $unwind: "$video" },
+        { $skip: skip },
+        { $limit: parseInt(limit) },
+        {
+            $project: {
+                "video._id": 1,
+                "video.title": 1,
+                "video.description": 1,
+                "video.thumbnail": 1,
+            },
+        },
+    ];
 
-        return res
-            .status(200)
-            .json(
-                new ApiResponse(
-                    200,
-                    likedVideos,
-                    "Liked videos fetched successfully"
-                )
-            );
-    } catch (error) {
-        throw new ApiError(500, `Internal Server Error: ${error.message}`);
-    }
+    const likedVideos = await Like.aggregate(aggregatePipeline);
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                likedVideos,
+                "Liked videos fetched successfully"
+            )
+        );
 });
 
 export { toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos };
