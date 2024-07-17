@@ -6,19 +6,75 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const createTweet = asyncHandler(async (req, res) => {
-    //TODO: create tweet
+    const { content } = req.body;
+    const userId = req.user?._id;
+
+    if (content.trim() === "") {
+        throw new ApiError(400, "Content cannot be empty");
+    }
+
+    const tweet = await Tweet.create({ content, owner: userId });
+
+    if (!tweet) throw new ApiError(500, "Internal Server Error creating Tweet");
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, tweet, "Tweet created successfully"));
 });
 
 const getUserTweets = asyncHandler(async (req, res) => {
-    // TODO: get user tweets
+    const { username } = req.params;
+    const user = await User.findOne({ username });
+    if (!user) throw new ApiError(404, "User not found");
+
+    const aggregatePipeline = [
+        {
+            $match: { owner: user._id },
+        },
+        { $sort: { createdAt: -1 } },
+    ];
+
+    const tweet = await Tweet.aggregate(aggregatePipeline);
+
+    if (!tweet)
+        throw new ApiError(500, "Internal Server Error fetching tweets");
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, tweet, "Tweets fetched successfully"));
 });
 
 const updateTweet = asyncHandler(async (req, res) => {
-    //TODO: update tweet
+    const { tweetId } = req.params;
+    const { content } = req.body;
+    if (!isValidObjectId(tweetId)) throw new ApiError(400, "Invalid TweetId");
+
+    const tweet = await Tweet.findByIdAndUpdate(
+        tweetId,
+        {
+            $set: { content },
+        },
+        { new: true }
+    );
+
+    if (!tweet) throw new ApiError(500, "Internal Server Error updating Tweet");
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, tweet, "Tweet updated successfully"));
 });
 
 const deleteTweet = asyncHandler(async (req, res) => {
-    //TODO: delete tweet
+    const { tweetId } = req.params;
+    if (!isValidObjectId(tweetId)) throw new ApiError(400, "Invalid TweetId");
+
+    const tweet = await Tweet.findByIdAndDelete(tweetId);
+
+    if (!tweet) throw new ApiError(500, "Internal Server Error deleting Tweet");
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, tweet, "Tweet deleted successfully"));
 });
 
 export { createTweet, getUserTweets, updateTweet, deleteTweet };

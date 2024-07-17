@@ -98,7 +98,7 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     }
 
     playlist.videos.push(videoId);
-    await playlist.save();
+    await playlist.save({ validateBeforeSave: false });
 
     return res
         .status(200)
@@ -132,7 +132,7 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
     playlist.videos = playlist.videos.filter(
         (video) => video.toString() !== videoId
     );
-    await playlist.save();
+    await playlist.save({ validateBeforeSave: false });
 
     return res
         .status(200)
@@ -200,7 +200,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     if (name) playlist.name = name;
     if (description) playlist.description = description;
 
-    await playlist.save();
+    await playlist.save({ validateBeforeSave: false });
 
     return res
         .status(200)
