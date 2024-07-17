@@ -7,7 +7,7 @@ const healthcheck = asyncHandler(async (req, res) => {
     try {
         res.status(200, new ApiResponse(200, {}, "Server is running fine!"));
     } catch (error) {
-        throw new ApiError(501, {}, "Server Error! Please try again later");
+        throw new ApiError(501, "Server Error! Please try again later");
     }
 });
 
