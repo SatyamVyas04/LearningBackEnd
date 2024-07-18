@@ -36,14 +36,21 @@ const uploadOnCloudinary = async (localFilePath) => {
 const deleteFromCloudinary = async (fileLink) => {
     try {
         if (!fileLink) return null;
-        fileLink = fileLink.replace(`${process.env.CLOUDINARY_LOCATION}`, "");
-        fileLink = fileLink.slice(12, -4);
-        // console.log("After replacement:", fileLink);
+
+        // Extract public ID using URL parsing
+        const url = new URL(fileLink);
+        const pathSegments = url.pathname.split("/");
+        const filename = pathSegments[pathSegments.length - 1];
+        const publicId = filename.split(".")[0];
+
+        // Determine resource type (image or video)
+        const resourceType = fileLink.includes("/video/") ? "video" : "image";
 
         // Delete from Cloudinary
-        const response = await cloudinary.uploader.destroy(fileLink);
-
-        console.log("Current File is deleted from Cloudinary");
+        const response = await cloudinary.uploader.destroy(publicId, {
+            resource_type: resourceType,
+        });
+        console.log(`${publicId} is deleted from Cloudinary (${resourceType})`);
         return response;
     } catch (error) {
         throw new Error(`Failed to delete file: ${error}`);

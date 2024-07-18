@@ -23,8 +23,10 @@ const createTweet = asyncHandler(async (req, res) => {
 });
 
 const getUserTweets = asyncHandler(async (req, res) => {
-    const { username } = req.params;
-    const user = await User.findOne({ username });
+    const { userId } = req.params;
+    if (!isValidObjectId(userId)) throw new ApiError(400, "UserId invalid");
+
+    const user = await User.findById({ userId });
     if (!user) throw new ApiError(404, "User not found");
 
     const aggregatePipeline = [

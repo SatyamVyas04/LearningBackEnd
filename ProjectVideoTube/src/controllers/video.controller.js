@@ -8,19 +8,15 @@ import {
     uploadOnCloudinary,
 } from "../utils/cloudinary.js";
 
-const getAllVideos = asyncHandler(async (req, res, next) => {
+const getAllVideos = asyncHandler(async (req, res) => {
     const {
         page = 1,
         limit = 10,
-        query,
+        query = "",
         sortBy = "createdAt",
         sortType = "desc",
         username,
     } = req.query;
-
-    if (!query) {
-        throw new ApiError(400, "No Query provided");
-    }
 
     const options = {
         page: parseInt(page, 10),
@@ -29,9 +25,15 @@ const getAllVideos = asyncHandler(async (req, res, next) => {
     };
 
     const matchedConditions = {
-        $text: { $search: query },
         isPublished: true,
     };
+
+    if (query) {
+        matchedConditions.$or = [
+            { title: { $regex: query, $options: "i" } },
+            { description: { $regex: query, $options: "i" } },
+        ];
+    }
 
     if (username) {
         const user = await User.findOne({ username });
@@ -164,6 +166,14 @@ const updateVideo = asyncHandler(async (req, res) => {
 
     const updateFields = { title, description };
 
+    const video = await Video.findById(videoId);
+    if (req.user._id.toString() != video.owner.toString()) {
+        throw new ApiError(
+            401,
+            "Unauthorised access: Video does not belong to the user"
+        );
+    }
+
     if (req.file?.path) {
         let currFileLocation =
             await Video.findById(videoId).select("thumbnail");
@@ -203,6 +213,13 @@ const deleteVideo = asyncHandler(async (req, res) => {
     const video = await Video.findById(videoId);
     if (!video) throw new ApiError(404, "Video not found");
 
+    if (req.user._id.toString() != video.owner.toString()) {
+        throw new ApiError(
+            401,
+            "Unauthorised access: Video does not belong to the user"
+        );
+    }
+
     await Promise.all([
         deleteFromCloudinary(video.videoFile),
         deleteFromCloudinary(video.thumbnail),
@@ -220,20 +237,24 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 
     if (!videoId) throw new ApiError(400, "VideoId cannot be empty");
 
-    try {
-        const video = await Video.findById(videoId);
-        if (!video) throw new ApiError(404, "Video not found");
+    const video = await Video.findById(videoId);
+    if (!video) throw new ApiError(404, "Video not found");
 
-        video.isPublished = !video.isPublished;
-        await video.save({ validateBeforeSave: false });
-
-        const responseMessage = video.isPublished
-            ? "Video Published"
-            : "Video UnPublished";
-        return res.status(200).json(new ApiResponse(200, {}, responseMessage));
-    } catch (error) {
-        throw new ApiError(500, `Internal Server Error: ${error.message}`);
+    if (req.user._id.toString() != video.owner.toString()) {
+        throw new ApiError(
+            401,
+            "Unauthorised access: Video does not belong to the user"
+        );
     }
+
+    const curr_status = video.isPublished;
+    video.isPublished = !curr_status;
+    await video.save({ validateBeforeSave: false });
+
+    const responseMessage = video.isPublished
+        ? "Video Published"
+        : "Video UnPublished";
+    return res.status(200).json(new ApiResponse(200, {}, responseMessage));
 });
 
 export {
