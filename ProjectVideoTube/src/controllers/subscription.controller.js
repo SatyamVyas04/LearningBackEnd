@@ -6,10 +6,10 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const toggleSubscription = asyncHandler(async (req, res) => {
     const { channelId } = req.params;
-    console.log("Toggle Subscription - Channel ID:", channelId);
+    // console.log("Toggle Subscription - Channel ID:", channelId);
 
     if (!isValidObjectId(channelId)) {
-        console.log("Invalid channel ID");
+        // console.log("Invalid channel ID");
         throw new ApiError(400, "Invalid channel ID");
     }
 
@@ -18,7 +18,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
             channel: channelId,
             subscriber: req.user?._id,
         });
-        console.log("Current Subscription Status:", currentStatus);
+        // console.log("Current Subscription Status:", currentStatus);
 
         let subscription;
         if (!currentStatus) {
@@ -26,17 +26,17 @@ const toggleSubscription = asyncHandler(async (req, res) => {
                 channel: channelId,
                 subscriber: req.user?._id,
             });
-            console.log("Subscribed to Channel:", subscription);
+            // console.log("Subscribed to Channel:", subscription);
         } else {
             subscription = await Subscription.findOneAndDelete({
                 channel: channelId,
                 subscriber: req.user?._id,
             });
-            console.log("Unsubscribed from Channel:", subscription);
+            // console.log("Unsubscribed from Channel:", subscription);
         }
 
         if (!subscription) {
-            console.log("Error processing subscription");
+            // console.log("Error processing subscription");
             throw new ApiError(500, "Error processing subscription");
         }
 
@@ -45,23 +45,23 @@ const toggleSubscription = asyncHandler(async (req, res) => {
             : "Channel Subscribed";
         return res.status(200).json(new ApiResponse(200, {}, responseMessage));
     } catch (error) {
-        console.error("Error toggling subscription:", error.message);
+        // console.error("Error toggling subscription:", error.message);
         throw new ApiError(500, error.message || "Error toggling subscription");
     }
 });
 
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     const channelId = req.user?._id;
-    console.log("Get User Channel Subscribers - Channel ID:", channelId);
+    // console.log("Get User Channel Subscribers - Channel ID:", channelId);
 
     if (!isValidObjectId(channelId)) {
-        console.log("Invalid channel ID");
+        // console.log("Invalid channel ID");
         throw new ApiError(400, "Invalid channel ID");
     }
 
     try {
         if (req.user?._id.toString() !== channelId.toString()) {
-            console.log("Unauthorized access");
+            // console.log("Unauthorized access");
             throw new ApiError(403, "Unauthorized access");
         }
 
@@ -85,7 +85,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         ];
 
         const channelSubs = await Subscription.aggregate(aggregationPipeline);
-        console.log("Subscribers:", channelSubs);
+        // console.log("Subscribers:", channelSubs);
 
         return res
             .status(200)
@@ -97,17 +97,17 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
                 )
             );
     } catch (error) {
-        console.error("Error fetching subscribers:", error.message);
+        // console.error("Error fetching subscribers:", error.message);
         throw new ApiError(500, error.message || "Error fetching subscribers");
     }
 });
 
 const getSubscribedChannels = asyncHandler(async (req, res) => {
     const subscriberId = req.user?._id;
-    console.log("Get Subscribed Channels - Subscriber ID:", subscriberId);
+    // console.log("Get Subscribed Channels - Subscriber ID:", subscriberId);
 
     if (!isValidObjectId(subscriberId)) {
-        console.log("Invalid subscriber ID");
+        // console.log("Invalid subscriber ID");
         throw new ApiError(400, "Invalid user ID");
     }
 
@@ -136,7 +136,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
         ];
         const subbedChannels =
             await Subscription.aggregate(aggregationPipeline);
-        console.log("Subscribed Channels:", subbedChannels);
+        // console.log("Subscribed Channels:", subbedChannels);
 
         return res
             .status(200)
@@ -148,7 +148,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
                 )
             );
     } catch (error) {
-        console.error("Error fetching subscribed channels:", error.message);
+        // console.error("Error fetching subscribed channels:", error.message);
         throw new ApiError(
             500,
             error.message || "Error fetching subscribed channels"
