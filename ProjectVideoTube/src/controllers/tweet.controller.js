@@ -36,6 +36,24 @@ const getUserTweets = asyncHandler(async (req, res) => {
         {
             $match: { owner: user._id },
         },
+        {
+            $lookup: {
+                from: "likes",
+                localField: "_id",
+                foreignField: "tweet",
+                as: "likes",
+            },
+        },
+        {
+            $addFields: {
+                likesCount: { $size: "$likes" },
+            },
+        },
+        {
+            $project: {
+                likes: 0,
+            },
+        },
         { $sort: { createdAt: -1 } },
     ]);
 
