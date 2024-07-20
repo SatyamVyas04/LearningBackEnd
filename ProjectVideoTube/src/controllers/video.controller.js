@@ -193,9 +193,9 @@ const updateVideo = asyncHandler(async (req, res) => {
     }
 
     const updateFields = { title, description };
-    if (!video) throw new ApiError(404, "Video not found");
-
+    
     const video = await Video.findById(videoId);
+    if (!video) throw new ApiError(404, "Video not found");
     if (req.user._id.toString() != video.owner.toString()) {
         throw new ApiError(
             401,

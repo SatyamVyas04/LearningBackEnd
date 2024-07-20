@@ -1,5 +1,5 @@
 import { ApiError } from "../utils/ApiError.js";
-import { asyncHandler } from "../utils/AsyncHandler.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import { mongoose } from "mongoose";
 import { Video } from "./../models/video.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
