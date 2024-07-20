@@ -151,6 +151,34 @@ const getVideoById = asyncHandler(async (req, res) => {
 
     await Video.findByIdAndUpdate(videoId, { $inc: { views: 1 } });
 
+    const user = await User.findById(req.user?._id);
+
+    if (!user.watchHistory.includes(videoId)) {
+        await Video.findByIdAndUpdate(
+            videoId,
+            {
+                $inc: {
+                    views: 1,
+                },
+            },
+            {
+                new: true,
+            }
+        );
+    }
+
+    await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $addToSet: {
+                watchHistory: videoId,
+            },
+        },
+        {
+            new: true,
+        }
+    );
+
     return res
         .status(200)
         .json(new ApiResponse(200, video, "Video fetched successfully"));

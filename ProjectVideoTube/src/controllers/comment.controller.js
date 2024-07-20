@@ -85,7 +85,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
 });
 
 const addComment = asyncHandler(async (req, res) => {
-    const { video } = req.params;
+    const { videoId } = req.params;
     const { content } = req.body;
 
     if (!content) {
@@ -94,7 +94,7 @@ const addComment = asyncHandler(async (req, res) => {
 
     const comment = await Comment.create({
         content,
-        video,
+        video: videoId,
         owner: req.user._id,
     });
 
